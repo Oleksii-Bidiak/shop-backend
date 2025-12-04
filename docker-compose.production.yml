@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  app:
+    image: ${APP_IMAGE:-registry.example.com/shop-backend:latest}
+    env_file:
+      - .env.production
+    depends_on:
+      - postgres
+    ports:
+      - "3000:3000"
+    deploy:
+      restart_policy:
+        condition: on-failure
+    environment:
+      NODE_ENV: production
+
+  postgres:
+    image: postgres:16-alpine
+    env_file:
+      - .env.production
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata_prod:
