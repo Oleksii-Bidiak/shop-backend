@@ -28,6 +28,7 @@ async function bootstrap() {
     .setTitle('Shop Backend API')
     .setDescription('API for product catalogue, inventory, and orders')
     .setVersion('1.0')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);

@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
@@ -13,7 +14,7 @@ export class InventoryService {
     const where = search
       ? {
           variant: {
-            name: { contains: search, mode: 'insensitive' },
+            name: { contains: search, mode: Prisma.QueryMode.insensitive },
           },
         }
       : {};
