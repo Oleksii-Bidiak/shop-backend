@@ -1,7 +1,21 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from '../common/decorators/api-paginated-response.decorator.js';
-import { ApiTags } from '@nestjs/swagger';
 
+import { Roles } from '../common/decorators/roles.decorator.js';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
+import { RolesGuard } from '../common/guards/roles.guard.js';
+import { Role } from '../auth/role.enum.js';
 import { CreateProductDto } from './dto/create-product.dto.js';
 import { ProductQueryDto } from './dto/product-query.dto.js';
 import { UpdateProductDto } from './dto/update-product.dto.js';
@@ -13,6 +27,9 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MANAGER, Role.ADMIN)
   create(@Body() createProductDto: CreateProductDto) {
     return this.productsService.create(createProductDto);
   }
@@ -29,6 +46,9 @@ export class ProductsController {
   }
 
   @Put(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MANAGER, Role.ADMIN)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,

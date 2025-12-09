@@ -1,4 +1,5 @@
-import { PrismaClient, OrderStatus } from '@prisma/client';
+import { PrismaClient, OrderStatus, Role } from '@prisma/client';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -84,16 +85,42 @@ async function main() {
     })),
   });
 
-  const user = await prisma.user.create({
-    data: {
-      email: 'customer@example.com',
-      name: 'Sample Customer',
-    },
-  });
+  const [, , customerUser] = await Promise.all([
+    prisma.user.upsert({
+      where: { email: 'admin@example.com' },
+      create: {
+        email: 'admin@example.com',
+        name: 'Shop Admin',
+        password: await bcrypt.hash('AdminPass123', 10),
+        role: Role.ADMIN,
+      },
+      update: {},
+    }),
+    prisma.user.upsert({
+      where: { email: 'manager@example.com' },
+      create: {
+        email: 'manager@example.com',
+        name: 'Shop Manager',
+        password: await bcrypt.hash('ManagerPass123', 10),
+        role: Role.MANAGER,
+      },
+      update: {},
+    }),
+    prisma.user.upsert({
+      where: { email: 'customer@example.com' },
+      create: {
+        email: 'customer@example.com',
+        name: 'Sample Customer',
+        password: await bcrypt.hash('CustomerPass123', 10),
+        role: Role.USER,
+      },
+      update: {},
+    }),
+  ]);
 
   await prisma.order.create({
     data: {
-      userId: user.id,
+      userId: customerUser.id,
       status: OrderStatus.PAID,
       total: variants[0].price.mul(2),
       items: {

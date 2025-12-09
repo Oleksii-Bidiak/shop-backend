@@ -6,6 +6,8 @@ import { InventoryModule } from './inventory/inventory.module.js';
 import { OrdersModule } from './orders/orders.module.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { ProductsModule } from './products/products.module.js';
+import { AuthModule } from './auth/auth.module.js';
+import { StatisticsModule } from './statistics/statistics.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -17,6 +19,8 @@ import { AppService } from './app.service.js';
     ProductsModule,
     InventoryModule,
     OrdersModule,
+    AuthModule,
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

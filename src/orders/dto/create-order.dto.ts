@@ -6,10 +6,11 @@ import { OrderStatus } from '../order-status.enum.js';
 import { OrderItemDto } from './order-item.dto.js';
 
 export class CreateOrderDto {
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @Type(() => Number)
   @IsInt()
-  userId!: number;
+  @IsOptional()
+  userId?: number;
 
   @ApiProperty({ type: [OrderItemDto] })
   @IsArray()

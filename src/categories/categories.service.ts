@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
@@ -18,8 +19,15 @@ export class CategoriesService {
     const where = search
       ? {
           OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
+            {
+              name: { contains: search, mode: Prisma.QueryMode.insensitive },
+            },
+            {
+              description: {
+                contains: search,
+                mode: Prisma.QueryMode.insensitive,
+              },
+            },
           ],
         }
       : {};

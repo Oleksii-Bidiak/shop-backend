@@ -1,21 +1,36 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { OrderQueryDto } from './dto/order-query.dto.js';
 import { OrderStatus } from './order-status.enum.js';
+import { Role } from '../auth/role.enum.js';
+import { AuthUser } from '../auth/interfaces/auth-user.interface.js';
 
 @Injectable()
 export class OrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create({ userId, items, status = OrderStatus.PENDING }: CreateOrderDto) {
+  async create(
+    { userId, items, status = OrderStatus.PENDING }: CreateOrderDto,
+    currentUser: AuthUser,
+  ) {
     if (!items?.length) {
       throw new BadRequestException('Order must contain at least one item');
     }
 
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const targetUserId = userId ?? currentUser.sub;
+    if (currentUser.role === Role.USER && targetUserId !== currentUser.sub) {
+      throw new ForbiddenException('Users can only create orders for themselves');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: targetUserId } });
     if (!user) {
-      throw new NotFoundException(`User ${userId} not found`);
+      throw new NotFoundException(`User ${targetUserId} not found`);
     }
 
     const variants = await this.prisma.variant.findMany({
@@ -42,6 +57,9 @@ export class OrdersService {
       return sum + Number(variant.price) * item.quantity;
     }, 0);
 
+    const resolvedStatus =
+      currentUser.role === Role.USER ? OrderStatus.PENDING : status;
+
     return this.prisma.$transaction(async (tx) => {
       for (const item of items) {
         await tx.stock.update({
@@ -54,8 +72,8 @@ export class OrdersService {
 
       return tx.order.create({
         data: {
-          userId,
-          status,
+          userId: targetUserId,
+          status: resolvedStatus,
           total,
           items: {
             create: items.map((item) => ({
@@ -73,12 +91,16 @@ export class OrdersService {
     });
   }
 
-  async findAll(query: OrderQueryDto) {
+  async findAll(query: OrderQueryDto, currentUser: AuthUser) {
     const { page = 1, limit = 10, status, userId } = query;
     const where: Record<string, unknown> = {
       ...(status ? { status } : {}),
-      ...(userId ? { userId } : {}),
+      ...(userId && currentUser.role !== Role.USER ? { userId } : {}),
     };
+
+    if (currentUser.role === Role.USER) {
+      where.userId = currentUser.sub;
+    }
 
     const [total, data] = await this.prisma.$transaction([
       this.prisma.order.count({ where }),
@@ -94,13 +116,17 @@ export class OrdersService {
     return { total, page, limit, data };
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, currentUser: AuthUser) {
     const order = await this.prisma.order.findUnique({
       where: { id },
       include: { items: { include: { variant: true } }, user: true },
     });
     if (!order) {
       throw new NotFoundException(`Order ${id} not found`);
+    }
+
+    if (currentUser.role === Role.USER && order.userId !== currentUser.sub) {
+      throw new ForbiddenException('Access to this order is denied');
     }
     return order;
   }
