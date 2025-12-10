@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AppConfigModule } from './config/config.module.js';
 import { CategoriesModule } from './categories/categories.module.js';
@@ -17,6 +20,18 @@ import { CheckoutModule } from './checkout/checkout.module.js';
 @Module({
   imports: [
     AppConfigModule,
+    ConfigModule,
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: configService.get<number>('security.throttle.globalTtl') ?? 60,
+            limit: configService.get<number>('security.throttle.globalLimit') ?? 120,
+          },
+        ],
+      }),
+    }),
     PrismaModule,
     CategoriesModule,
     ProductsModule,
@@ -29,6 +44,12 @@ import { CheckoutModule } from './checkout/checkout.module.js';
     CheckoutModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

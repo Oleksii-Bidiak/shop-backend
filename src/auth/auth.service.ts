@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/
 import { ConfigService } from '@nestjs/config';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { authenticator } from 'otplib';
 
 import { PrismaService } from '../prisma/prisma.service.js';
 import { RegisterDto } from './dto/register.dto.js';
@@ -55,6 +56,22 @@ export class AuthService {
     const isPasswordValid = await bcrypt.compare(dto.password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if ([Role.MANAGER, Role.ADMIN].includes(user.role)) {
+      if (!dto.totpCode) {
+        throw new UnauthorizedException('Two-factor authentication code is required');
+      }
+
+      const totpSecret = this.configService.get<string>('auth.totpSecret');
+      if (!totpSecret) {
+        throw new UnauthorizedException('Two-factor authentication is not configured');
+      }
+
+      const isTotpValid = authenticator.verify({ token: dto.totpCode, secret: totpSecret });
+      if (!isTotpValid) {
+        throw new UnauthorizedException('Invalid two-factor authentication code');
+      }
     }
 
     return {

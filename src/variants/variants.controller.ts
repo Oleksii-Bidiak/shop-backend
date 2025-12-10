@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -19,6 +20,7 @@ import {
   ApiTags,
   ApiResponse,
   ApiUnauthorizedResponse,
+  ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from '../common/decorators/api-paginated-response.decorator.js';
 
@@ -54,9 +56,11 @@ export class VariantsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List variants with filters' })
+  @ApiOperation({ summary: 'List variants with filters', description: 'Limited to 60 requests per minute.' })
   @ApiPaginatedResponse({ description: 'List variants with filters', model: VariantModel })
   @ApiBadRequestResponse({ description: 'Invalid filters', type: ErrorResponseDto })
+  @ApiTooManyRequestsResponse({ description: 'Too many variant list requests', type: ErrorResponseDto })
+  @Throttle(60, 60)
   findAll(@Query() query: VariantQueryDto) {
     return this.variantsService.findAll(query);
   }

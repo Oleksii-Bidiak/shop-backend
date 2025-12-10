@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -6,6 +7,7 @@ import {
   ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
@@ -30,9 +32,14 @@ export class AuthController {
   }
 
   @Post('login')
-  @ApiOperation({ summary: 'User login' })
+  @ApiOperation({
+    summary: 'User login',
+    description: 'Limited to 10 requests per minute. MANAGER and ADMIN roles require a valid TOTP code.',
+  })
   @ApiOkResponse({ description: 'Login successful', type: AuthResponseDto })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials', type: ErrorResponseDto })
+  @ApiTooManyRequestsResponse({ description: 'Too many login attempts', type: ErrorResponseDto })
+  @Throttle(10, 60)
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }

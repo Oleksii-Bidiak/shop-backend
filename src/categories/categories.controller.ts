@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -19,6 +20,7 @@ import {
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from '../common/decorators/api-paginated-response.decorator.js';
 
@@ -112,7 +114,7 @@ export class CategoriesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List categories' })
+  @ApiOperation({ summary: 'List categories', description: 'Limited to 60 requests per minute.' })
   @ApiPaginatedResponse({ description: 'List categories', model: CategoryModel })
   @ApiBadRequestResponse({
     description: 'Invalid filters',
@@ -127,6 +129,8 @@ export class CategoriesController {
       },
     },
   })
+  @ApiTooManyRequestsResponse({ description: 'Too many category list requests', type: ErrorResponseDto })
+  @Throttle(60, 60)
   findAll(@Query() query: CategoryQueryDto) {
     return this.categoriesService.findAll(query);
   }

@@ -23,11 +23,26 @@ async function bootstrap() {
     defaultVersion: '1',
   });
   app.setGlobalPrefix('api');
-  app.use(helmet());
+  const corsConfig = configService.get('app.cors');
+  app.enableCors({
+    origin: corsConfig?.origins ?? '*',
+    credentials: corsConfig?.credentials ?? false,
+  });
+
+  const cspDirectives = configService.get('app.csp');
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: cspDirectives,
+      },
+    }),
+  );
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Shop Backend API')
-    .setDescription('API for product catalogue, inventory, and orders')
+    .setDescription(
+      'API for product catalogue, inventory, and orders. Login requests are rate limited and require two-factor codes for privileged roles.',
+    )
     .setVersion('1.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
     .build();
