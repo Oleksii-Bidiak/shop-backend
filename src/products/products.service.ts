@@ -2,8 +2,9 @@ import { Prisma } from '@prisma/client';
 import { Injectable, NotFoundException } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service.js';
+import { SortOrder } from '../common/dto/sort-order.enum.js';
 import { CreateProductDto } from './dto/create-product.dto.js';
-import { ProductQueryDto, SortOption } from './dto/product-query.dto.js';
+import { ProductQueryDto, ProductSortBy } from './dto/product-query.dto.js';
 import { UpdateProductDto } from './dto/update-product.dto.js';
 
 @Injectable()
@@ -26,9 +27,20 @@ export class ProductsService {
   }
 
   async findAll(query: ProductQueryDto) {
-    const { page = 1, limit = 10, search, categoryId, minPrice, maxPrice, sort } = query;
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      categoryId,
+      minPrice,
+      maxPrice,
+      startDate,
+      endDate,
+      sortBy = ProductSortBy.CREATED_AT,
+      sortOrder = SortOrder.DESC,
+    } = query;
 
-    const where = {
+    const where: Prisma.ProductWhereInput = {
       ...(search
         ? {
             OR: [
@@ -57,16 +69,25 @@ export class ProductsService {
             },
           }
         : {}),
+      ...(startDate || endDate
+        ? {
+            createdAt: { gte: startDate, lte: endDate },
+          }
+        : {}),
     };
 
-    const orderBy: Record<string, unknown> = (() => {
-      switch (sort) {
-        case SortOption.PRICE_ASC:
-          return { variants: { _min: { price: 'asc' } } };
-        case SortOption.PRICE_DESC:
-          return { variants: { _max: { price: 'desc' } } };
+    const orderBy: Prisma.ProductOrderByWithRelationInput = (() => {
+      switch (sortBy) {
+        case ProductSortBy.NAME:
+          return { name: sortOrder };
+        case ProductSortBy.PRICE:
+          return {
+            variants: sortOrder === SortOrder.ASC
+              ? { _min: { price: sortOrder } }
+              : { _max: { price: sortOrder } },
+          };
         default:
-          return { createdAt: 'desc' };
+          return { createdAt: sortOrder };
       }
     })();
 

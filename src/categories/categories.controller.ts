@@ -12,13 +12,13 @@ import {
 import { ApiPaginatedResponse } from '../common/decorators/api-paginated-response.decorator.js';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
 import { Role } from '../auth/role.enum.js';
 import { CategoriesService } from './categories.service.js';
 import { CreateCategoryDto } from './dto/create-category.dto.js';
+import { CategoryQueryDto } from './dto/category-query.dto.js';
 import { UpdateCategoryDto } from './dto/update-category.dto.js';
 
 @ApiTags('categories')
@@ -36,9 +36,7 @@ export class CategoriesController {
 
   @Get()
   @ApiPaginatedResponse({ description: 'List categories' })
-  findAll(
-    @Query() query: PaginationQueryDto & { search?: string },
-  ) {
+  findAll(@Query() query: CategoryQueryDto) {
     return this.categoriesService.findAll(query);
   }
 

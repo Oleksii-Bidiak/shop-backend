@@ -1,49 +1,41 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsDate,
-  IsEnum,
-  IsInt,
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsDate, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto.js';
 import { SortOrder } from '../../common/dto/sort-order.enum.js';
 
-export enum ProductSortBy {
-  CREATED_AT = 'createdAt',
-  NAME = 'name',
+export enum InventorySortBy {
+  UPDATED_AT = 'updatedAt',
+  SKU = 'sku',
   PRICE = 'price',
 }
 
-export class ProductQueryDto extends PaginationQueryDto {
-  @ApiPropertyOptional({ description: 'Search by product name or description' })
+export class InventoryQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ description: 'Search by variant name' })
   @IsOptional()
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ description: 'Filter by category id' })
+  @ApiPropertyOptional({ description: 'Filter by exact variant SKU' })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  categoryId?: number;
+  @IsString()
+  sku?: string;
 
-  @ApiPropertyOptional({ description: 'Minimum variant price', example: 0 })
+  @ApiPropertyOptional({ description: 'Minimum variant price' })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   minPrice?: number;
 
-  @ApiPropertyOptional({ description: 'Maximum variant price', example: 9999 })
+  @ApiPropertyOptional({ description: 'Maximum variant price' })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   maxPrice?: number;
 
   @ApiPropertyOptional({
-    description: 'Filter products created after this date',
+    description: 'Only include inventory updated after this date',
     type: String,
     format: 'date-time',
   })
@@ -53,7 +45,7 @@ export class ProductQueryDto extends PaginationQueryDto {
   startDate?: Date;
 
   @ApiPropertyOptional({
-    description: 'Filter products created before this date',
+    description: 'Only include inventory updated before this date',
     type: String,
     format: 'date-time',
   })
@@ -62,10 +54,10 @@ export class ProductQueryDto extends PaginationQueryDto {
   @IsDate()
   endDate?: Date;
 
-  @ApiPropertyOptional({ enum: ProductSortBy, default: ProductSortBy.CREATED_AT })
+  @ApiPropertyOptional({ enum: InventorySortBy, default: InventorySortBy.UPDATED_AT })
   @IsOptional()
-  @IsEnum(ProductSortBy)
-  sortBy?: ProductSortBy = ProductSortBy.CREATED_AT;
+  @IsEnum(InventorySortBy)
+  sortBy?: InventorySortBy = InventorySortBy.UPDATED_AT;
 
   @ApiPropertyOptional({ enum: SortOrder, default: SortOrder.DESC })
   @IsOptional()

@@ -11,12 +11,12 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from '../common/decorators/api-paginated-response.decorator.js';
 
-import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
 import { Roles } from '../common/decorators/roles.decorator.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../common/guards/roles.guard.js';
 import { Role } from '../auth/role.enum.js';
 import { InventoryService } from './inventory.service.js';
+import { InventoryQueryDto } from './dto/inventory-query.dto.js';
 import { UpdateStockDto } from './dto/update-stock.dto.js';
 
 @ApiTags('inventory')
@@ -26,7 +26,7 @@ export class InventoryController {
 
   @Get()
   @ApiPaginatedResponse({ description: 'Paginated inventory view' })
-  list(@Query() query: PaginationQueryDto & { search?: string }) {
+  list(@Query() query: InventoryQueryDto) {
     return this.inventoryService.listInventory(query);
   }
 
