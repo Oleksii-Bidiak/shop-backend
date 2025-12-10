@@ -277,6 +277,58 @@ export class PaymentModel {
   updatedAt!: string;
 }
 
+export class StockMovementModel {
+  @ApiProperty({ example: 1 })
+  id!: number;
+
+  @ApiProperty({ example: 2 })
+  variantId!: number;
+
+  @ApiProperty({ required: false, example: 15 })
+  orderId?: number;
+
+  @ApiProperty({ example: -3 })
+  change!: number;
+
+  @ApiProperty({ example: 10 })
+  previousQuantity!: number;
+
+  @ApiProperty({ example: 7 })
+  newQuantity!: number;
+
+  @ApiProperty({ required: false, example: 'MANUAL_ADJUST' })
+  reason?: string;
+
+  @ApiProperty({ example: '2025-01-15T12:00:00.000Z' })
+  createdAt!: string;
+
+  @ApiProperty({ type: () => VariantModel })
+  variant!: VariantModel;
+
+  @ApiProperty({ required: false, type: () => OrderModel })
+  order?: OrderModel;
+}
+
+export class OrderStatusHistoryModel {
+  @ApiProperty({ example: 1 })
+  id!: number;
+
+  @ApiProperty({ example: 15 })
+  orderId!: number;
+
+  @ApiProperty({ enum: OrderStatus, example: OrderStatus.PAID })
+  status!: OrderStatus;
+
+  @ApiProperty({ example: '2025-01-15T12:00:00.000Z' })
+  changedAt!: string;
+
+  @ApiProperty({ required: false, example: 3 })
+  changedByUserId?: number;
+
+  @ApiProperty({ required: false, type: () => UserModel })
+  changedByUser?: UserModel;
+}
+
 export class RevenueByStatusModel {
   @ApiProperty({ enum: OrderStatus, example: OrderStatus.PAID })
   status!: OrderStatus;
@@ -338,4 +390,6 @@ export const SWAGGER_EXTRA_MODELS = [
   TopCategoryModel,
   AdminOverviewDto,
   AuthResponseDto,
+  StockMovementModel,
+  OrderStatusHistoryModel,
 ];

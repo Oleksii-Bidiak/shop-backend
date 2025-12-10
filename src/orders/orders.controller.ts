@@ -32,7 +32,12 @@ import { CreateOrderDto } from './dto/create-order.dto.js';
 import { OrderQueryDto } from './dto/order-query.dto.js';
 import { OrdersService } from './orders.service.js';
 import { EnsureAvailableStockPipe } from '../common/pipes/ensure-available-stock.pipe.js';
-import { ErrorResponseDto, OrderModel } from '../common/swagger/swagger.models.js';
+import {
+  ErrorResponseDto,
+  OrderModel,
+  OrderStatusHistoryModel,
+} from '../common/swagger/swagger.models.js';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -95,5 +100,21 @@ export class OrdersController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.ordersService.findOne(id, user);
+  }
+
+  @Get(':id/status-history')
+  @ApiOperation({ summary: 'Paginated order status history' })
+  @ApiPaginatedResponse({ description: 'Paginated order status history', model: OrderStatusHistoryModel })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token', type: ErrorResponseDto })
+  @ApiForbiddenResponse({ description: 'Forbidden for this user', type: ErrorResponseDto })
+  @ApiNotFoundResponse({ description: 'Order not found', type: ErrorResponseDto })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MANAGER, Role.ADMIN)
+  getStatusHistory(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: PaginationQueryDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.ordersService.getStatusHistory(id, user, query.page, query.limit);
   }
 }
