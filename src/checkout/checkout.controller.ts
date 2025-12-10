@@ -1,5 +1,14 @@
 import { Body, Controller, HttpCode, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
@@ -12,6 +21,7 @@ import { CheckoutResponseDto } from './dto/checkout-response.dto.js';
 import { AuthUser } from '../auth/interfaces/auth-user.interface.js';
 import { PaymentWebhookDto } from './dto/payment-webhook.dto.js';
 import { PaymentStatus } from '../orders/payment-status.enum.js';
+import { ErrorResponseDto } from '../common/swagger/swagger.models.js';
 
 @ApiTags('checkout')
 @ApiBearerAuth()
@@ -22,16 +32,24 @@ export class CheckoutController {
   constructor(private readonly checkoutService: CheckoutService) {}
 
   @Post()
+  @ApiOperation({
+    summary: 'Checkout current cart',
+    description: 'Requires authenticated USER, MANAGER, or ADMIN roles.',
+  })
   @ApiCreatedResponse({
     description: 'Validate cart, lock stock, create order and payment intent',
     type: CheckoutResponseDto,
   })
+  @ApiBadRequestResponse({ description: 'Cart invalid or payment failed to initialize', type: ErrorResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token', type: ErrorResponseDto })
+  @ApiForbiddenResponse({ description: 'User cannot checkout this cart', type: ErrorResponseDto })
   checkout(@CurrentUser() user: AuthUser, @Body() dto: CheckoutRequestDto) {
     return this.checkoutService.checkout(user, dto);
   }
 
   @Post('webhook')
   @HttpCode(200)
+  @ApiOperation({ summary: 'Handle payment webhook callbacks' })
   @ApiOkResponse({
     description: 'Update payment status and propagate to order if needed',
     schema: {
@@ -42,6 +60,7 @@ export class CheckoutController {
       },
     },
   })
+  @ApiBadRequestResponse({ description: 'Invalid webhook payload', type: ErrorResponseDto })
   handleWebhook(@Body() dto: PaymentWebhookDto) {
     return this.checkoutService.handlePaymentWebhook(dto.intentId, dto.status);
   }

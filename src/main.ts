@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 
 import { AppModule } from './app.module.js';
+import { SWAGGER_EXTRA_MODELS } from './common/swagger/swagger.models.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -30,7 +31,9 @@ async function bootstrap() {
     .setVersion('1.0')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' })
     .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  const document = SwaggerModule.createDocument(app, swaggerConfig, {
+    extraModels: SWAGGER_EXTRA_MODELS,
+  });
   SwaggerModule.setup('api/docs', app, document);
 
   const port = configService.getOrThrow<number>('app.port');

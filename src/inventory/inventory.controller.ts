@@ -8,7 +8,17 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiPaginatedResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
 import { ApiPaginatedResponse } from '../common/decorators/api-paginated-response.decorator.js';
 
 import { Roles } from '../common/decorators/roles.decorator.js';
@@ -18,6 +28,7 @@ import { Role } from '../auth/role.enum.js';
 import { InventoryService } from './inventory.service.js';
 import { InventoryQueryDto } from './dto/inventory-query.dto.js';
 import { UpdateStockDto } from './dto/update-stock.dto.js';
+import { ErrorResponseDto, StockModel } from '../common/swagger/swagger.models.js';
 
 @ApiTags('inventory')
 @Controller({ path: 'inventory', version: '1' })
@@ -25,18 +36,31 @@ export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
   @Get()
-  @ApiPaginatedResponse({ description: 'Paginated inventory view' })
+  @ApiOperation({ summary: 'Paginated inventory view' })
+  @ApiPaginatedResponse({ description: 'Paginated inventory view', model: StockModel })
+  @ApiBadRequestResponse({ description: 'Invalid filters', type: ErrorResponseDto })
   list(@Query() query: InventoryQueryDto) {
     return this.inventoryService.listInventory(query);
   }
 
   @Get(':variantId')
+  @ApiOperation({ summary: 'Get stock by variant id' })
+  @ApiOkResponse({ type: StockModel })
+  @ApiNotFoundResponse({ description: 'Stock not found', type: ErrorResponseDto })
   getStock(@Param('variantId', ParseIntPipe) variantId: number) {
     return this.inventoryService.getStock(variantId);
   }
 
   @Post('adjust')
   @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Adjust stock',
+    description: 'Requires MANAGER or ADMIN roles.',
+  })
+  @ApiOkResponse({ type: StockModel })
+  @ApiBadRequestResponse({ description: 'Validation failed', type: ErrorResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token', type: ErrorResponseDto })
+  @ApiForbiddenResponse({ description: 'Insufficient role', type: ErrorResponseDto })
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.MANAGER, Role.ADMIN)
   upsert(@Body() dto: UpdateStockDto) {
