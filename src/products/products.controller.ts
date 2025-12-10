@@ -16,7 +16,6 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiPaginatedResponse,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,

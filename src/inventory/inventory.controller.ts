@@ -15,7 +15,6 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiPaginatedResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -39,6 +38,11 @@ export class InventoryController {
   @ApiOperation({ summary: 'Paginated inventory view' })
   @ApiPaginatedResponse({ description: 'Paginated inventory view', model: StockModel })
   @ApiBadRequestResponse({ description: 'Invalid filters', type: ErrorResponseDto })
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token', type: ErrorResponseDto })
+  @ApiForbiddenResponse({ description: 'Insufficient role', type: ErrorResponseDto })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MANAGER, Role.ADMIN)
   list(@Query() query: InventoryQueryDto) {
     return this.inventoryService.listInventory(query);
   }
@@ -47,6 +51,11 @@ export class InventoryController {
   @ApiOperation({ summary: 'Get stock by variant id' })
   @ApiOkResponse({ type: StockModel })
   @ApiNotFoundResponse({ description: 'Stock not found', type: ErrorResponseDto })
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token', type: ErrorResponseDto })
+  @ApiForbiddenResponse({ description: 'Insufficient role', type: ErrorResponseDto })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MANAGER, Role.ADMIN)
   getStock(@Param('variantId', ParseIntPipe) variantId: number) {
     return this.inventoryService.getStock(variantId);
   }
