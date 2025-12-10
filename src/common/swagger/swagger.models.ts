@@ -97,8 +97,8 @@ export class StockModel {
   @ApiProperty({ example: '2025-01-15T12:00:00.000Z' })
   updatedAt!: string;
 
-  @ApiProperty({ type: () => VariantModel, required: false })
-  variant?: VariantModel;
+  @ApiProperty({ type: () => Object, required: false })
+  variant?: unknown;
 }
 
 export class VariantModel {
