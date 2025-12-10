@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import {
   BadRequestException,
   ForbiddenException,
@@ -6,9 +7,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
-import { OrderQueryDto } from './dto/order-query.dto.js';
+import { OrderQueryDto, OrderSortBy } from './dto/order-query.dto.js';
 import { OrderStatus } from './order-status.enum.js';
 import { Role } from '../auth/role.enum.js';
+import { SortOrder } from '../common/dto/sort-order.enum.js';
 import { AuthUser } from '../auth/interfaces/auth-user.interface.js';
 
 @Injectable()
@@ -92,15 +94,42 @@ export class OrdersService {
   }
 
   async findAll(query: OrderQueryDto, currentUser: AuthUser) {
-    const { page = 1, limit = 10, status, userId } = query;
-    const where: Record<string, unknown> = {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      statuses,
+      userId,
+      minTotal,
+      maxTotal,
+      startDate,
+      endDate,
+      sortBy = OrderSortBy.CREATED_AT,
+      sortOrder = SortOrder.DESC,
+    } = query;
+
+    const where: Prisma.OrderWhereInput = {
       ...(status ? { status } : {}),
+      ...(statuses?.length ? { status: { in: statuses } } : {}),
       ...(userId && currentUser.role !== Role.USER ? { userId } : {}),
+      ...(minTotal || maxTotal ? { total: { gte: minTotal, lte: maxTotal } } : {}),
+      ...(startDate || endDate ? { createdAt: { gte: startDate, lte: endDate } } : {}),
     };
 
     if (currentUser.role === Role.USER) {
       where.userId = currentUser.sub;
     }
+
+    const orderBy: Prisma.OrderOrderByWithRelationInput = (() => {
+      switch (sortBy) {
+        case OrderSortBy.STATUS:
+          return { status: sortOrder };
+        case OrderSortBy.TOTAL:
+          return { total: sortOrder };
+        default:
+          return { createdAt: sortOrder };
+      }
+    })();
 
     const [total, data] = await this.prisma.$transaction([
       this.prisma.order.count({ where }),
@@ -109,7 +138,7 @@ export class OrdersService {
         skip: (page - 1) * limit,
         take: limit,
         include: { items: { include: { variant: true } }, user: true },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
     ]);
 
