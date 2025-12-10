@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { ProductsModule } from './products/products.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { StatisticsModule } from './statistics/statistics.module.js';
+import { CartsModule } from './carts/carts.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -21,6 +22,7 @@ import { AppService } from './app.service.js';
     OrdersModule,
     AuthModule,
     StatisticsModule,
+    CartsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
