@@ -12,6 +12,7 @@ import { CartsModule } from './carts/carts.module.js';
 import { VariantsModule } from './variants/variants.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { CheckoutModule } from './checkout/checkout.module.js';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AppService } from './app.service.js';
     StatisticsModule,
     CartsModule,
     VariantsModule,
+    CheckoutModule,
   ],
   controllers: [AppController],
   providers: [AppService],

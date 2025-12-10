@@ -1,4 +1,4 @@
-import { PrismaClient, OrderStatus, Role } from '@prisma/client';
+import { PrismaClient, OrderStatus, PaymentStatus, Role } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -131,6 +131,15 @@ async function main() {
             price: variants[0].price,
           },
         ],
+      },
+      payments: {
+        create: {
+          amount: variants[0].price.mul(2),
+          currency: 'USD',
+          provider: 'mock',
+          intentId: 'pi_seed_succeeded',
+          status: PaymentStatus.SUCCEEDED,
+        },
       },
     },
   });
