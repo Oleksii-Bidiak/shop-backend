@@ -1,0 +1,116 @@
+{
+  "consumer": {
+    "name": "shop-frontend"
+  },
+  "provider": {
+    "name": "shop-backend"
+  },
+  "interactions": [
+    {
+      "description": "retrieve the product catalog",
+      "request": {
+        "method": "GET",
+        "path": "/products"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "total": 1,
+          "page": 1,
+          "limit": 10,
+          "data": [
+            {
+              "id": 1,
+              "name": "Smartphone X",
+              "description": "Flagship device for contract verification",
+              "categoryId": 2,
+              "category": {
+                "id": 2,
+                "name": "Electronics",
+                "slug": "electronics",
+                "createdAt": "2024-01-01T00:00:00.000Z",
+                "updatedAt": "2024-01-01T00:00:00.000Z"
+              },
+              "variants": [
+                {
+                  "id": 10,
+                  "name": "128GB",
+                  "sku": "SMX-128-BLK",
+                  "price": 799,
+                  "currency": "USD",
+                  "stocks": [
+                    { "id": 100, "location": "default", "quantity": 15 }
+                  ],
+                  "createdAt": "2024-01-01T00:00:00.000Z",
+                  "updatedAt": "2024-01-01T00:00:00.000Z"
+                }
+              ],
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            }
+          ]
+        }
+      },
+      "providerStates": [
+        {
+          "name": "v1 catalog contains at least one product"
+        }
+      ]
+    },
+    {
+      "description": "retrieve a single product by id",
+      "request": {
+        "method": "GET",
+        "path": "/products/1"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "id": 1,
+          "name": "Smartphone X",
+          "description": "Flagship device for contract verification",
+          "categoryId": 2,
+          "category": {
+            "id": 2,
+            "name": "Electronics",
+            "slug": "electronics",
+            "createdAt": "2024-01-01T00:00:00.000Z",
+            "updatedAt": "2024-01-01T00:00:00.000Z"
+          },
+          "variants": [
+            {
+              "id": 10,
+              "name": "128GB",
+              "sku": "SMX-128-BLK",
+              "price": 799,
+              "currency": "USD",
+              "stocks": [
+                { "id": 100, "location": "default", "quantity": 15 }
+              ],
+              "createdAt": "2024-01-01T00:00:00.000Z",
+              "updatedAt": "2024-01-01T00:00:00.000Z"
+            }
+          ],
+          "createdAt": "2024-01-01T00:00:00.000Z",
+          "updatedAt": "2024-01-01T00:00:00.000Z"
+        }
+      },
+      "providerStates": [
+        {
+          "name": "product 1 exists in v1 catalog"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  }
+}

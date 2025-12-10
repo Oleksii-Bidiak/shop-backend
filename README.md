@@ -55,3 +55,11 @@ OpenAPI documentation is available at `http://localhost:3000/api/docs` once the 
 - `src/categories`, `src/products`, `src/inventory`, `src/orders` - Feature modules with controllers, services, and DTO validation.
 - `prisma/schema.prisma` - Database schema for categories, products, variants, stock, carts, and orders.
 - `prisma/seed.ts` - Seed script to load sample catalog data.
+
+## API versioning and compatibility
+- The backend uses URI versioning with `v1` as the current stable contract.
+- Breaking-change rules, v1 guarantees, and the v2 migration roadmap are described in [docs/VERSIONING.md](docs/VERSIONING.md).
+
+## Testing and quality
+- Run `npm test` for unit tests and `npm run test:e2e` for end-to-end coverage.
+- Contract verification for key product endpoints is available via `npm run test:contract`; Pact artifacts live under `contracts/` and are published by CI for downstream consumers.
