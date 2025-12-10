@@ -27,7 +27,8 @@ import { Role } from '../auth/role.enum.js';
 import { InventoryService } from './inventory.service.js';
 import { InventoryQueryDto } from './dto/inventory-query.dto.js';
 import { UpdateStockDto } from './dto/update-stock.dto.js';
-import { ErrorResponseDto, StockModel } from '../common/swagger/swagger.models.js';
+import { ErrorResponseDto, StockModel, StockMovementModel } from '../common/swagger/swagger.models.js';
+import { StockMovementQueryDto } from './dto/stock-movement-query.dto.js';
 
 @ApiTags('inventory')
 @Controller({ path: 'inventory', version: '1' })
@@ -58,6 +59,18 @@ export class InventoryController {
   @Roles(Role.MANAGER, Role.ADMIN)
   getStock(@Param('variantId', ParseIntPipe) variantId: number) {
     return this.inventoryService.getStock(variantId);
+  }
+
+  @Get('movements')
+  @ApiOperation({ summary: 'Paginated stock movement logs' })
+  @ApiPaginatedResponse({ description: 'Paginated stock movement logs', model: StockMovementModel })
+  @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Missing or invalid token', type: ErrorResponseDto })
+  @ApiForbiddenResponse({ description: 'Insufficient role', type: ErrorResponseDto })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.MANAGER, Role.ADMIN)
+  listMovements(@Query() query: StockMovementQueryDto) {
+    return this.inventoryService.listMovements(query);
   }
 
   @Post('adjust')

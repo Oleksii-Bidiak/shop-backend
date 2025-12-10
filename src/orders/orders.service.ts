@@ -63,16 +63,31 @@ export class OrdersService {
       currentUser.role === Role.USER ? OrderStatus.PENDING : status;
 
     return this.prisma.$transaction(async (tx) => {
+      const stockChanges: {
+        variantId: number;
+        previousQuantity: number;
+        newQuantity: number;
+      }[] = [];
+
       for (const item of items) {
+        const previousQuantity = stockMap.get(item.variantId)!.quantity;
+        const newQuantity = previousQuantity - item.quantity;
+
         await tx.stock.update({
           where: { variantId: item.variantId },
           data: {
             quantity: { decrement: item.quantity },
           },
         });
+
+        stockChanges.push({
+          variantId: item.variantId,
+          previousQuantity,
+          newQuantity,
+        });
       }
 
-      return tx.order.create({
+      const order = await tx.order.create({
         data: {
           userId: targetUserId,
           status: resolvedStatus,
@@ -90,6 +105,29 @@ export class OrdersService {
           user: true,
         },
       });
+
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          status: resolvedStatus,
+          changedByUserId: currentUser.sub,
+        },
+      });
+
+      if (stockChanges.length) {
+        await tx.stockMovement.createMany({
+          data: stockChanges.map((change) => ({
+            variantId: change.variantId,
+            orderId: order.id,
+            change: change.newQuantity - change.previousQuantity,
+            previousQuantity: change.previousQuantity,
+            newQuantity: change.newQuantity,
+            reason: 'ORDER_CREATED',
+          })),
+        });
+      }
+
+      return order;
     });
   }
 
@@ -158,5 +196,30 @@ export class OrdersService {
       throw new ForbiddenException('Access to this order is denied');
     }
     return order;
+  }
+
+  async getStatusHistory(orderId: number, currentUser: AuthUser, page = 1, limit = 10) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+
+    if (!order) {
+      throw new NotFoundException(`Order ${orderId} not found`);
+    }
+
+    if (currentUser.role === Role.USER) {
+      throw new ForbiddenException('Access to status history is denied');
+    }
+
+    const [total, data] = await this.prisma.$transaction([
+      this.prisma.orderStatusHistory.count({ where: { orderId } }),
+      this.prisma.orderStatusHistory.findMany({
+        where: { orderId },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: { changedByUser: true },
+        orderBy: { changedAt: Prisma.SortOrder.desc },
+      }),
+    ]);
+
+    return { total, page, limit, data };
   }
 }

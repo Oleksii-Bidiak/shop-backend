@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { SortOrder } from '../common/dto/sort-order.enum.js';
 import { InventoryQueryDto, InventorySortBy } from './dto/inventory-query.dto.js';
 import { UpdateStockDto } from './dto/update-stock.dto.js';
+import { StockMovementQueryDto } from './dto/stock-movement-query.dto.js';
 
 @Injectable()
 export class InventoryService {
@@ -77,18 +78,34 @@ export class InventoryService {
   }
 
   async updateStock({ variantId, quantity, location }: UpdateStockDto) {
-    const existing = await this.prisma.stock.findUnique({ where: { variantId } });
-    if (!existing) {
-      return this.prisma.stock.create({
-        data: { variantId, quantity, location },
-        include: { variant: true },
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.stock.findUnique({
+        where: { variantId },
       });
-    }
 
-    return this.prisma.stock.update({
-      where: { variantId },
-      data: { quantity, location },
-      include: { variant: true },
+      const previousQuantity = existing?.quantity ?? 0;
+      const stock = existing
+        ? await tx.stock.update({
+            where: { variantId },
+            data: { quantity, location },
+            include: { variant: true },
+          })
+        : await tx.stock.create({
+            data: { variantId, quantity, location },
+            include: { variant: true },
+          });
+
+      await tx.stockMovement.create({
+        data: {
+          variantId,
+          change: quantity - previousQuantity,
+          previousQuantity,
+          newQuantity: quantity,
+          reason: 'MANUAL_ADJUST',
+        },
+      });
+
+      return stock;
     });
   }
 
@@ -101,5 +118,26 @@ export class InventoryService {
       throw new NotFoundException(`Stock for variant ${variantId} not found`);
     }
     return stock;
+  }
+
+  async listMovements(query: StockMovementQueryDto) {
+    const { page = 1, limit = 10, variantId } = query;
+
+    const where: Prisma.StockMovementWhereInput = {
+      ...(variantId ? { variantId } : {}),
+    };
+
+    const [total, data] = await this.prisma.$transaction([
+      this.prisma.stockMovement.count({ where }),
+      this.prisma.stockMovement.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        include: { variant: true, order: true },
+        orderBy: { createdAt: Prisma.SortOrder.desc },
+      }),
+    ]);
+
+    return { total, page, limit, data };
   }
 }

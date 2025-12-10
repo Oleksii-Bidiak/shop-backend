@@ -51,6 +51,12 @@ export class CheckoutService {
     const intentId = `pi_${randomUUID()}`;
 
     return this.prisma.$transaction(async (tx) => {
+      const stockChanges: {
+        variantId: number;
+        previousQuantity: number;
+        newQuantity: number;
+      }[] = [];
+
       for (const item of cart.items) {
         const stock = item.variant.stocks[0];
         if (!stock || stock.quantity < item.quantity) {
@@ -59,9 +65,18 @@ export class CheckoutService {
           );
         }
 
+        const previousQuantity = stock.quantity;
+        const newQuantity = stock.quantity - item.quantity;
+
         await tx.stock.update({
           where: { variantId: item.variantId },
           data: { quantity: { decrement: item.quantity } },
+        });
+
+        stockChanges.push({
+          variantId: item.variantId,
+          previousQuantity,
+          newQuantity,
         });
       }
 
@@ -80,6 +95,27 @@ export class CheckoutService {
         },
         include: { items: { include: { variant: true } } },
       });
+
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          status: order.status,
+          changedByUserId: user.sub,
+        },
+      });
+
+      if (stockChanges.length) {
+        await tx.stockMovement.createMany({
+          data: stockChanges.map((change) => ({
+            variantId: change.variantId,
+            orderId: order.id,
+            change: change.newQuantity - change.previousQuantity,
+            previousQuantity: change.previousQuantity,
+            newQuantity: change.newQuantity,
+            reason: 'CHECKOUT',
+          })),
+        });
+      }
 
       const payment = await tx.payment.create({
         data: {
@@ -130,9 +166,16 @@ export class CheckoutService {
       });
 
       if (targetOrderStatus !== payment.order.status) {
-        await tx.order.update({
+        const updatedOrder = await tx.order.update({
           where: { id: payment.orderId },
           data: { status: targetOrderStatus },
+        });
+
+        await tx.orderStatusHistory.create({
+          data: {
+            orderId: updatedOrder.id,
+            status: updatedOrder.status,
+          },
         });
       }
 
