@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, Min } from 'class-validator';
+import { IsInt, Max, Min } from 'class-validator';
+
+import { MAX_QUANTITY, MIN_QUANTITY } from '../../common/constants/quantity.constants.js';
 
 export class OrderItemDto {
   @ApiProperty()
@@ -8,9 +10,10 @@ export class OrderItemDto {
   @IsInt()
   variantId!: number;
 
-  @ApiProperty({ example: 1 })
+  @ApiProperty({ example: 1, minimum: MIN_QUANTITY, maximum: MAX_QUANTITY })
   @Type(() => Number)
   @IsInt()
-  @Min(1)
+  @Min(MIN_QUANTITY)
+  @Max(MAX_QUANTITY)
   quantity!: number;
 }

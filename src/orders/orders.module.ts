@@ -4,10 +4,11 @@ import { InventoryModule } from '../inventory/inventory.module.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { OrdersController } from './orders.controller.js';
 import { OrdersService } from './orders.service.js';
+import { EnsureAvailableStockPipe } from '../common/pipes/ensure-available-stock.pipe.js';
 
 @Module({
   imports: [PrismaModule, InventoryModule],
   controllers: [OrdersController],
-  providers: [OrdersService],
+  providers: [OrdersService, EnsureAvailableStockPipe],
 })
 export class OrdersModule {}
