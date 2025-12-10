@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -19,6 +20,7 @@ import {
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiTooManyRequestsResponse,
 } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from '../common/decorators/api-paginated-response.decorator.js';
 
@@ -72,9 +74,11 @@ export class ProductsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List products with filters' })
+  @ApiOperation({ summary: 'List products with filters', description: 'Limited to 60 requests per minute.' })
   @ApiPaginatedResponse({ description: 'List products with filters', model: ProductModel })
   @ApiBadRequestResponse({ description: 'Invalid filters', type: ErrorResponseDto })
+  @ApiTooManyRequestsResponse({ description: 'Too many product list requests', type: ErrorResponseDto })
+  @Throttle(60, 60)
   findAll(@Query() query: ProductQueryDto) {
     return this.productsService.findAll(query);
   }
