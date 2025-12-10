@@ -9,6 +9,7 @@ import { ProductsModule } from './products/products.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { StatisticsModule } from './statistics/statistics.module.js';
 import { CartsModule } from './carts/carts.module.js';
+import { VariantsModule } from './variants/variants.module.js';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
 
@@ -23,6 +24,7 @@ import { AppService } from './app.service.js';
     AuthModule,
     StatisticsModule,
     CartsModule,
+    VariantsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
