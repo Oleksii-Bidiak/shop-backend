@@ -7,6 +7,7 @@ import {
   Post,
   Query,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApiPaginatedResponse } from '../common/decorators/api-paginated-response.decorator.js';
@@ -20,6 +21,7 @@ import { Role } from '../auth/role.enum.js';
 import { CreateOrderDto } from './dto/create-order.dto.js';
 import { OrderQueryDto } from './dto/order-query.dto.js';
 import { OrdersService } from './orders.service.js';
+import { EnsureAvailableStockPipe } from '../common/pipes/ensure-available-stock.pipe.js';
 
 @ApiTags('orders')
 @ApiBearerAuth()
@@ -31,7 +33,7 @@ export class OrdersController {
 
   @Post()
   create(
-    @Body() createOrderDto: CreateOrderDto,
+    @Body(EnsureAvailableStockPipe) createOrderDto: CreateOrderDto,
     @CurrentUser() user: AuthUser,
   ) {
     return this.ordersService.create(createOrderDto, user);

@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 
@@ -21,6 +22,7 @@ import { CartsService } from './carts.service.js';
 import { AddCartItemDto } from './dto/add-cart-item.dto.js';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto.js';
 import { CartResponseDto } from './dto/cart-response.dto.js';
+import { EnsureAvailableStockPipe } from '../common/pipes/ensure-available-stock.pipe.js';
 
 @ApiTags('carts')
 @ApiBearerAuth()
@@ -38,12 +40,14 @@ export class CartsController {
 
   @Post('items')
   @ApiOkResponse({ description: 'Add a variant to the cart', type: CartResponseDto })
+  @UsePipes(EnsureAvailableStockPipe)
   addItem(@CurrentUser() user: AuthUser, @Body() dto: AddCartItemDto) {
     return this.cartsService.addItem(user.sub, dto);
   }
 
   @Put('items')
   @ApiOkResponse({ description: 'Update quantity for an item', type: CartResponseDto })
+  @UsePipes(EnsureAvailableStockPipe)
   updateItem(@CurrentUser() user: AuthUser, @Body() dto: UpdateCartItemDto) {
     return this.cartsService.updateItem(user.sub, dto);
   }
